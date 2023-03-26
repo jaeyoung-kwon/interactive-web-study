@@ -1,0 +1,129 @@
+@keyframes moveToRight {
+  0% {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(1000px);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+button {
+  animation-name: rotate;
+  animation-duration: 0.1s;
+  animation-iteration-count: infinite;
+  animation-play-state: paused;
+  outline: none;
+  border: none;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+}
+
+button:hover {
+  animation-play-state: running;
+}
+
+#flex-5 {
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+  margin-top: 200px;
+}
+#flex-4 {
+  display: flex;
+  flex-direction: row;
+  gap: 100px;
+  margin-top: 200px;
+}
+#flex-6 {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin-top: 200px;
+}
+#box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+}
+
+#JumpStep5Start {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: steps(5, jump-start);
+}
+#JumpStep5End {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: steps(5, jump-end);
+}
+#JumpStep5None {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: steps(5, jump-none);
+}
+#JumpStep5Both {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: steps(5, jump-both);
+}
+#JumpJustStart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: step-start;
+}
+#JumpJustEnd {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #aceeaf;
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+  animation: moveToRight 3s infinite;
+  animation-timing-function: step-end;
+}
