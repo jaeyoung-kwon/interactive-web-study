@@ -1,5 +1,5 @@
 import CanvasOption from './CanvasOption.js';
-import { randomNumBetween } from './utils.js';
+import { randomNumBetween } from '../../util';
 
 class Particle extends CanvasOption {
   constructor(x, y, vx, vy, opacity, colorDeg) {

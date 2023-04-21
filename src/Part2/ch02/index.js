@@ -2,7 +2,7 @@ import CanvasOption from './js/CanvasOption.js';
 import Particle from './js/Particle.js';
 import Spark from './js/Spark.js';
 import Tail from './js/Tail.js';
-import { hypotenuse, randomNumBetween } from './js/utils.js';
+import { hypotenuse, randomNumBetween } from '../utils.js';
 
 class Canvas extends CanvasOption {
   constructor() {

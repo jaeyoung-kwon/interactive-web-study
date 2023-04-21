@@ -1,5 +1,5 @@
 import CanvasOption from './CanvasOption.js';
-import { randomNumBetween } from './utils.js';
+import { randomNumBetween } from '../../utils.js';
 
 export default class Tail extends CanvasOption {
   constructor(x, vy, colorDeg) {
