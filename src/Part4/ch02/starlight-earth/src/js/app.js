@@ -1,12 +1,33 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { convertLatLngToPos, getGradientCanvas } from './utils.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
+import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
+import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
+import { HalftonePass } from 'three/examples/jsm/postprocessing/HalftonePass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 
 export default function () {
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
   });
   renderer.outputEncoding = THREE.sRGBEncoding;
+  const renderTarget = new THREE.WebGLRenderTarget(
+    window.innerWidth,
+    window.innerHeight,
+    {
+      samples: 2
+    }
+  );
+
+  const effectComposer = new EffectComposer(renderer, renderTarget);
+
   const textureLoader = new THREE.TextureLoader();
   const cubeTextureLoader = new THREE.CubeTextureLoader();
   const environmentMap = cubeTextureLoader.load([
@@ -51,6 +72,65 @@ export default function () {
 
     scene.add(light);
   };
+
+  const addPostEffects = (obj) => {
+    const { earthGroup } = obj;
+
+    const renderPass = new RenderPass(scene, camera);
+    effectComposer.addPass(renderPass);
+
+    const filmPass = new FilmPass(
+      0.35, // noise intensity
+      0.025, // scanline intensity
+      648, // scanline count
+      false // grayscale
+    );
+    // effectComposer.addPass(filmPass);
+    const glitchPass = new GlitchPass();
+    // glitchPass.goWild = true;
+    // effectComposer.addPass(glitchPass);
+    const afterimagePass = new AfterimagePass(
+      0.96 // default
+    );
+    // effectComposer.addPass(afterimagePass);
+    const halftonePass = new HalftonePass(
+      window.innerWidth,
+      window.innerHeight,
+      {
+        radius: 10,
+        shape: 1,
+        scatter: 0,
+        blending: 1, 
+      }
+    );
+    // effectComposer.addPass(halftonePass);
+    const unrealBloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      10, // strength
+      0.9, // radius
+      0.03 // threshold
+    )
+    // effectComposer.addPass(unrealBloomPass);
+
+    
+
+    const shaderPass = new ShaderPass(GammaCorrectionShader);
+    effectComposer.addPass(shaderPass);
+
+    const outlinePass = new OutlinePass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      scene,
+      camera
+    );
+    outlinePass.selectedObjects = [...earthGroup.children];
+    outlinePass.edgeStrength = 1;
+    // outlinePass.edgeGlow = 5;
+    // outlinePass.pulsePeriod = 1;
+    effectComposer.addPass(outlinePass);
+
+    const smaaPass = new SMAAPass();
+    effectComposer.addPass(smaaPass);
+  }
 
   const createEarth1 = () => {
     const material = new THREE.MeshStandardMaterial({
@@ -166,8 +246,8 @@ export default function () {
     const curve = new THREE.CatmullRomCurve3(points);
     const geometry = new THREE.TubeGeometry(curve, 20, 0.003);
 
-    const graidentCanvas = getGradientCanvas('#757F94', '#263D74');
-    const texture = new THREE.CanvasTexture(graidentCanvas);
+    const gradientCanvas = getGradientCanvas('#757F94', '#263D74');
+    const texture = new THREE.CanvasTexture(gradientCanvas);
 
     const material = new THREE.MeshBasicMaterial({ map: texture });
     const mesh = new THREE.Mesh(geometry, material);
@@ -204,6 +284,8 @@ export default function () {
 
     renderer.setSize(canvasSize.width, canvasSize.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    effectComposer.setSize(canvasSize.width, canvasSize.height);
   };
 
   const addEvent = () => {
@@ -219,15 +301,18 @@ export default function () {
     star.rotation.y += 0.001;
 
     controls.update();
-    renderer.render(scene, camera);
+    // renderer.render(scene, camera);
+    effectComposer.render();
     requestAnimationFrame(() => {
       draw(obj);
     });
   };
 
   const initialize = () => {
-    addLight();
     const obj = create();
+
+    addLight();
+    addPostEffects(obj);
     addEvent();
     resize();
     draw(obj);
