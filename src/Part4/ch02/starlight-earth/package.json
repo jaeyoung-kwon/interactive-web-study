@@ -15,7 +15,8 @@
     "eslint-plugin-import": "^2.25.2",
     "prettier": "^2.7.1",
     "sass": "^1.56.1",
-    "vite": "^4.3.2"
+    "vite": "^4.3.2",
+    "vite-plugin-glsl": "^1.1.2"
   },
   "dependencies": {
     "dat.gui": "^0.7.9",

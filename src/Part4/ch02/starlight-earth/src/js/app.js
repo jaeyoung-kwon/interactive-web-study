@@ -4,16 +4,17 @@ import { convertLatLngToPos, getGradientCanvas } from './utils.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
-import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
-import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
-import { HalftonePass } from 'three/examples/jsm/postprocessing/HalftonePass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import dat from 'dat.gui';
+import vertexShader from '../shaders/vertex.glsl';
+import fragmentShader from '../shaders/fragment.glsl';
 
 export default function () {
+  const clock = new THREE.Clock();
+
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
   });
@@ -66,6 +67,8 @@ export default function () {
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
 
+  const gui = new dat.GUI();
+
   const addLight = () => {
     const light = new THREE.DirectionalLight(0xffffff);
     light.position.set(2.65, 2.13, 1.02);
@@ -80,53 +83,68 @@ export default function () {
     effectComposer.addPass(renderPass);
 
     const filmPass = new FilmPass(
-      0.35, // noise intensity
-      0.025, // scanline intensity
-      648, // scanline count
+      1, // noise intensity
+      1, // scanline intensity
+      2000, // scanline count
       false // grayscale
     );
-    // effectComposer.addPass(filmPass);
-    const glitchPass = new GlitchPass();
-    // glitchPass.goWild = true;
-    // effectComposer.addPass(glitchPass);
-    const afterimagePass = new AfterimagePass(
-      0.96 // default
-    );
-    // effectComposer.addPass(afterimagePass);
-    const halftonePass = new HalftonePass(
-      window.innerWidth,
-      window.innerHeight,
-      {
-        radius: 10,
-        shape: 1,
-        scatter: 0,
-        blending: 1, 
-      }
-    );
-    // effectComposer.addPass(halftonePass);
+    effectComposer.addPass(filmPass);
     const unrealBloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      10, // strength
-      0.9, // radius
-      0.03 // threshold
+      0.4, // strength
+      0.7, // radius
+      0.2 // threshold
     )
-    // effectComposer.addPass(unrealBloomPass);
+    effectComposer.addPass(unrealBloomPass);
 
     
 
     const shaderPass = new ShaderPass(GammaCorrectionShader);
     effectComposer.addPass(shaderPass);
+    const customShaderPass = new ShaderPass({
+      // uniforms: {
+      //   tDiffuse: { value: null },
+      //   resolution: { value: new THREE.Vector2(1, window.innerHeight / window.innerWidth) },
+      //   time: { value: 0 },
+      // },
+      // vertexShader: `
+      //   varying vec2 vUv;
+      //   void main() {
+      //     vUv = uv;
+      //     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      //   }
+      // `,
+      // fragmentShader: `
+      //   uniform sampler2D tDiffuse;
+      //   uniform vec2 resolution;
+      //   uniform float time;
+      //   varying vec2 vUv;
+      //   void main() {
+      //     vec2 newUV = vUv;
+      //     newUV.x *= resolution.x / resolution.y;
+      //     newUV *= 3.0;
+      //     float distortion = sin(newUV.y * 10.0 + time) * 0.1;
+      //     newUV.y += distortion;
+      //     gl_FragColor = texture2D(tDiffuse, newUV);
+      //   }
+      // `,
+      uniforms: {
+        uBrightness: { value: 0.3 },
+        uPosition: { value: new THREE.Vector2(0, 0) },
+        uColor: { value: new THREE.Vector3(0, 0, 0.15) },
+        uAlpha: { value: 0.5 },
+        tDiffuse: { value: null },
+      },
+      vertexShader,
+      fragmentShader,
+    });
+    gui.add(customShaderPass.uniforms.uPosition.value, 'x', -1, 1, 0.01);
+    gui.add(customShaderPass.uniforms.uPosition.value, 'y', -1, 1, 0.01);
+    gui
+    .add(customShaderPass.uniforms.uBrightness, 'value', 0, 1, 0.01)
+    .name('brightness');
+    effectComposer.addPass(customShaderPass);
 
-    const outlinePass = new OutlinePass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      scene,
-      camera
-    );
-    outlinePass.selectedObjects = [...earthGroup.children];
-    outlinePass.edgeStrength = 1;
-    // outlinePass.edgeGlow = 5;
-    // outlinePass.pulsePeriod = 1;
-    effectComposer.addPass(outlinePass);
 
     const smaaPass = new SMAAPass();
     effectComposer.addPass(smaaPass);
@@ -167,9 +185,9 @@ export default function () {
   const createStar = (count = 500) => {
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      positions[i] = (Math.random() - 0.5) * 5; // -3~3
-      positions[i + 1] = (Math.random() - 0.5) * 5; // -3~3
-      positions[i + 2] = (Math.random() - 0.5) * 5; // -3~3
+      positions[i * 3] = (Math.random() - 0.5) * 5; // -3~3
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 5; // -3~3
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 5; // -3~3
     }
 
     const particleGeometry = new THREE.BufferGeometry();
@@ -202,7 +220,7 @@ export default function () {
 
     const mesh = new THREE.Mesh(
       new THREE.TorusGeometry(0.02, 0.002, 20, 20),
-      new THREE.MeshBasicMaterial({ color: 0x263d64 })
+      new THREE.MeshBasicMaterial({ color: 0x263d64, transparent: true })
     );
 
     mesh.position.set(position.x, position.y, position.z);
@@ -221,7 +239,7 @@ export default function () {
 
     const mesh = new THREE.Mesh(
       new THREE.TorusGeometry(0.02, 0.002, 20, 20),
-      new THREE.MeshBasicMaterial({ color: 0x263d64 })
+      new THREE.MeshBasicMaterial({ color: 0x263d64, transparent: true })
     );
 
     mesh.position.set(position.x, position.y, position.z);
@@ -249,7 +267,7 @@ export default function () {
     const gradientCanvas = getGradientCanvas('#757F94', '#263D74');
     const texture = new THREE.CanvasTexture(gradientCanvas);
 
-    const material = new THREE.MeshBasicMaterial({ map: texture });
+    const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     const mesh = new THREE.Mesh(geometry, material);
 
     return mesh;
@@ -271,6 +289,9 @@ export default function () {
 
     return {
       earthGroup,
+      point1,
+      point2,
+      curve,
       star,
     };
   };
@@ -293,7 +314,7 @@ export default function () {
   };
 
   const draw = (obj) => {
-    const { earthGroup, star } = obj;
+    const { earthGroup, point1, point2, curve, star } = obj;
     earthGroup.rotation.x += 0.0005;
     earthGroup.rotation.y += 0.0005;
 
@@ -301,8 +322,25 @@ export default function () {
     star.rotation.y += 0.001;
 
     controls.update();
-    // renderer.render(scene, camera);
     effectComposer.render();
+
+    const timeElapsed = clock.getElapsedTime();
+
+    let drawRangeCount = curve.geometry.drawRange.count;
+    const progress = timeElapsed / 2.5;
+    const speed = 3;
+
+    drawRangeCount = progress * speed * 960
+
+    curve.geometry.setDrawRange(0, drawRangeCount);
+
+    if ( timeElapsed > 4 ) {
+      point1.material.opacity = 5 - timeElapsed;
+      point2.material.opacity = 5 - timeElapsed;
+      curve.material.opacity = 5 - timeElapsed;
+    }
+
+    // renderer.render(scene, camera);
     requestAnimationFrame(() => {
       draw(obj);
     });

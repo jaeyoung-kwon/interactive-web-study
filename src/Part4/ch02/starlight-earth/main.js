@@ -1,4 +1,4 @@
 import app from './src/js/app';
-import shader from './src/js/shader';
+// import shader from './src/js/shader';
 
-shader()
+app()
